@@ -1,0 +1,232 @@
+//Project #2 - SortRace(QuickMergePore)
+//Group <TJMM> - Thomas Clark, Justin Nguyen, Michael Lum, Mike Jimenez
+var EVALUATE = ['F', 'D', '8', 'A', '1', '5', '9', '3', '4', '7', '8', '5'];
+var EVALUATE2= ['A', '6', '9', '3', '5', '4', '2', 'B', '7', '0', '1', '8'];
+var EVALUATE3= ['3', '2', '8', '4', '7', '6', '5', '1', '0', 'B', 'A', '9'];
+
+//---------------------Global Variables---------------------------------
+//Declare global objects for quick edits/updates
+let canvas = {cell_sz:20, wide:41, hgt:41};
+var frames = 0; //Counter for animation
+var frame_up = 75; //Update canvas after x frames
+var mergeArray = EVALUATE;
+var quickArray = EVALUATE;
+var goldArray = EVALUATE;
+
+var quickState = [];
+quickState.push(quickArray);
+let quickDone = false;
+var mergeState = [];
+mergeArray.forEach(function(temp){mergeState.push([temp]);});
+let mergeDone = false;
+var mergeState2 = mergeState;
+let goldDone = false;
+var evenoddpass = 0;
+
+//-----------------Setup canvas - req for P5----------------------------
+function setup(){
+  let sz = canvas.cell_sz; //let variables are blockscope
+  let wdt = canvas.wide * sz;
+  let hgt = canvas.hgt * sz;
+  
+  createCanvas(wdt, hgt); //Create a canvas of WxH pixels
+  drawGrid();
+    
+}//End of setup
+
+//Draw the blank grid to start
+function drawGrid(){
+ for(let i = 0; i < canvas.wide; i++){
+    for(let j = 0; j < canvas.hgt; j++){
+    fill(128,128,128);
+    stroke(100);
+    rect(i * canvas.cell_sz, j * canvas.cell_sz, canvas.cell_sz - 1, canvas.cell_sz - 1);
+    }
+  }
+  printMerge();
+  printQuick();
+  printGold();
+}//End of drawGrid
+
+function draw(){
+  frames++;
+    if(frames%frame_up == 0){
+    mergeSort();
+    quickSort();
+    goldSort();
+    
+    if(!mergeDone)printMerge();
+    if(!quickDone)printQuick();
+    if(!goldDone)printGold();
+    }
+}
+
+//---------------------------Helper Functions---------------------------
+
+//prints array for merge sort
+function printMerge(){
+  for(let k = 0; k < mergeArray.length; k++){
+    textAlign(CENTER,TOP);
+    textSize(15);
+    fill(0);
+    text(mergeArray[k], k * canvas.cell_sz + 10, 20*(frames/frame_up)+3);
+   }
+}//End of printMerge
+    
+//prints array for quick sort
+function printQuick(){
+  for(let l = 0; l < quickArray.length; l++){
+    textAlign(CENTER,TOP);
+    textSize(15);
+    fill(0);
+    text(quickArray[l], l * canvas.cell_sz + 290, 20*(frames/frame_up)+3);
+  }
+}//End of printQuick
+    
+//prints array for pore sort
+function printGold(){
+  for(let m = 0; m < goldArray.length; m++){
+    textAlign(CENTER,TOP);
+    textSize(15);
+    fill(0);
+    text(goldArray[m], m * canvas.cell_sz + 570, 20*(frames/frame_up)+3);
+  }
+}//End of printGold
+
+
+//------------------------------Quick Sort-------------------------------
+function quickSort(){
+  if(!quickDone){
+    
+    //Check if array is sorted
+    quickDone = true;
+    for(let i = 1; i < quickArray.length; i++){
+      if(quickArray[i] >= quickArray[i-1])continue;
+      quickDone = false;
+      break;
+    }
+        
+    //Clean the array, assign a temp for current length of quickState
+    quickArray = [];
+    let temp = quickState.length;
+    
+    //Iterate the array of arrays and evaluate via quicksort
+    for(var i = 0; i < temp; i++){
+      let greaterThan = [];
+      let lessThan = [];
+      let pivot = quickState[i][quickState[i].length - 1];
+            
+      for(var k = 0; k < quickState[i].length - 1; k++){
+        if(quickState[i][k] > pivot)greaterThan.push(quickState[i][k]);
+        else lessThan.push(quickState[i][k]);
+      }
+      
+      quickState.splice(i,1);//Remove section being eval'd
+      if(greaterThan.length)quickState.splice(i,0,greaterThan);
+      quickState.splice(i,0,pivot);//Always add pivot back in
+      if(lessThan.length)quickState.splice(i,0,lessThan);
+    }
+      
+    //Load quickArray back up
+    for(var j = 0; j < quickState.length; j++){
+      for(var m = 0; m <quickState[j].length; m++){
+      quickArray.push(quickState[j][m]);
+      }
+    }
+  }
+}//End of quickSort
+
+//------------------------------Merge Sort-------------------------------
+function mergeSort(){
+    if(!mergeDone){
+      
+        //Check if array is sorted
+        mergeDone = true;
+        for(let i = 1; i < mergeArray.length; i++){
+          if(mergeArray[i] >= mergeArray[i-1])continue;
+          mergeDone = false;
+          break;
+        }
+        
+        mergeArray = [];//Clean up mergeArray to reload in new sorted state
+        
+        
+        var mergeTemp = [];
+        for (var i = 0; i < mergeState.length; i++){
+            
+            mergeTemp = [];//Clear for next iteration
+            
+            //Dont eval last item(odd cases), just push onto temp and break outside loop
+            if(i == (mergeState.length - 1)){
+                 for(var v = 0; v < mergeState[i].length; v++)mergeTemp.push(mergeState[i][v]);
+                 break;
+            }
+            
+                //Eval this and the next arrays and insert into temp in order
+            let cx = mergeState[i].length+mergeState[i+1].length;
+            for(var q = 0; q < cx; q++){
+                if(!mergeState[i].length){mergeTemp.push(mergeState[i+1].shift());continue;}
+                if(!mergeState[i+1].length){mergeTemp.push(mergeState[i].shift());continue;}
+                  
+                if(mergeState[i][0] < mergeState[i+1][0])mergeTemp.push(mergeState[i].shift());
+                else mergeTemp.push(mergeState[i+1].shift());
+            }
+            //Temp should be now ready to splice back into mergeState
+            mergeState.splice(i,2,mergeTemp);
+        }
+        
+        //Load mergeArray back up
+        for(var d = 0; d < mergeState.length; d++){
+            for(var m = 0; m <mergeState[d].length; m++){
+                mergeArray.push(mergeState[d][m]);
+            }
+        }
+    }
+}//End of mergeSort
+
+//-----------------------Gold' Pore Sort ---------------------------
+//start Gold's Pore Sort
+function goldSort(){
+  // variable to hold temp value
+  var tempvalue;
+  //Check is array is sorted
+  if(!goldDone){
+    goldDone = true;
+    for(let i = 1; i < goldArray.length; i++){
+      if(goldArray[i] >= goldArray[i-1])continue;
+      goldDone = false;
+      break;
+    }
+  }
+    //even Pass
+  if (evenoddpass == 0 && goldDone == false){
+    for(i =0; i<goldArray.length; i = i+2){
+      // compares left variable to right
+      // switches place if left > right
+      if(goldArray[i]>goldArray[i+1]){
+        tempvalue = goldArray[i+1];
+        goldArray[i+1] = goldArray[i];
+        goldArray[i] = tempvalue;
+      }
+    }
+  }
+  //odd Pass
+  if (evenoddpass == 1 && goldDone ==false){
+    for(i =1; i<goldArray.length-1; i = i+2){
+      // compares left variable to right
+      // switches place if left > right
+      if(goldArray[i]>goldArray[i+1]){
+        tempvalue = goldArray[i+1];
+        goldArray[i+1] = goldArray[i];
+        goldArray[i] = tempvalue;
+      }
+    }
+  }
+  //update to even or odd pass
+  if(evenoddpass == 0){
+    evenoddpass = 1;
+  }
+  else{
+    evenoddpass = 0;
+  }
+}
